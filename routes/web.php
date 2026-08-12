@@ -10,6 +10,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PreviewModeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -39,6 +40,13 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
+    // Deliberately outside the 'admin' middleware group: once preview
+    // mode is on, EnsureUserIsAdmin blocks /admin/* for the duration, so
+    // the "Switch to Admin" action that turns it back off has to live
+    // somewhere that block doesn't reach.
+    Route::post('/preview-mode/customer', [PreviewModeController::class, 'enable'])->name('preview-mode.enable');
+    Route::post('/preview-mode/admin', [PreviewModeController::class, 'disable'])->name('preview-mode.disable');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -52,8 +60,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/sub-categories/{subCategory}', [AdminSubCategoryController::class, 'destroy'])->name('sub-categories.destroy');
 
     Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');
+    Route::get('/products/create', [AdminProductController::class, 'create'])->name('products.create');
     Route::post('/products', [AdminProductController::class, 'store'])->name('products.store');
-    Route::delete('/products/{product}', [AdminProductController::class, 'destroy'])->name('products.destroy');
+    // Explicit {product:id} because Product::getRouteKeyName() is 'slug'
+    // (for public SEO-friendly URLs) — admin actions operate on the
+    // numeric id instead, matching what the admin UI sends.
+    Route::delete('/products/{product:id}', [AdminProductController::class, 'destroy'])->name('products.destroy');
 
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');

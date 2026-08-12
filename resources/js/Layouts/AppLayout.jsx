@@ -1,9 +1,11 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import AuthModal from '@/Components/AuthModal';
+import CartIcon from '@/Components/CartIcon';
 import CategoryMegaMenu from '@/Components/CategoryMegaMenu';
 import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
+import SearchBar from '@/Components/SearchBar';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -12,14 +14,28 @@ const AUTH_MODAL_DISMISSED_KEY = 'makerorbit_auth_modal_dismissed';
 export default function AppLayout({ title, children }) {
     const user = usePage().props.auth?.user;
     const categoryNav = usePage().props.categoryNav ?? [];
+    const previewingAsCustomer = usePage().props.previewingAsCustomer ?? false;
+    const cartItemCount = usePage().props.cartItemCount ?? 0;
 
-    const canManageCatalog =
-        user?.role === 'super_admin' || user?.role === 'product_manager';
-    const canViewOrders =
+    // Real role, regardless of preview mode — controls whether the
+    // Switch to Customer/Admin button itself shows at all.
+    const isRealStaff =
         user?.role === 'super_admin' ||
+        user?.role === 'product_manager' ||
         user?.role === 'order_manager' ||
         user?.role === 'support_staff';
-    const canManageStaff = user?.role === 'super_admin';
+
+    // While previewing as a customer, hide every admin-only nav item so
+    // the storefront looks exactly like what a real customer would see.
+    const canManageCatalog =
+        !previewingAsCustomer &&
+        (user?.role === 'super_admin' || user?.role === 'product_manager');
+    const canViewOrders =
+        !previewingAsCustomer &&
+        (user?.role === 'super_admin' ||
+            user?.role === 'order_manager' ||
+            user?.role === 'support_staff');
+    const canManageStaff = !previewingAsCustomer && user?.role === 'super_admin';
     const isStaff = canManageCatalog || canViewOrders || canManageStaff;
     const activeCategorySlug = new URLSearchParams(
         window.location.search,
@@ -72,22 +88,12 @@ export default function AppLayout({ title, children }) {
                                 </NavLink>
 
                                 {user && (
-                                    <>
-                                        <NavLink
-                                            href={route('cart.index')}
-                                            active={route().current('cart.*')}
-                                        >
-                                            Cart
-                                        </NavLink>
-                                        <NavLink
-                                            href={route('orders.index')}
-                                            active={route().current(
-                                                'orders.*',
-                                            )}
-                                        >
-                                            Orders
-                                        </NavLink>
-                                    </>
+                                    <NavLink
+                                        href={route('orders.index')}
+                                        active={route().current('orders.*')}
+                                    >
+                                        Orders
+                                    </NavLink>
                                 )}
                             </div>
                         </div>
@@ -95,6 +101,33 @@ export default function AppLayout({ title, children }) {
                         <div className="hidden sm:ms-6 sm:flex sm:items-center sm:gap-4">
                             {user ? (
                                 <>
+                                    {isRealStaff &&
+                                        (previewingAsCustomer ? (
+                                            <Link
+                                                href={route(
+                                                    'preview-mode.disable',
+                                                )}
+                                                method="post"
+                                                as="button"
+                                                title="Testing tool: return to the admin view"
+                                                className="inline-flex items-center rounded-md border border-transparent bg-gray-800 px-3 py-2 text-sm font-medium text-white shadow-sm transition duration-150 ease-in-out hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                                            >
+                                                Switch to Admin
+                                            </Link>
+                                        ) : (
+                                            <Link
+                                                href={route(
+                                                    'preview-mode.enable',
+                                                )}
+                                                method="post"
+                                                as="button"
+                                                title="Testing tool: see the site as a customer would"
+                                                className="inline-flex items-center rounded-md border border-transparent bg-amber-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition duration-150 ease-in-out hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+                                            >
+                                                Switch to Customer
+                                            </Link>
+                                        ))}
+
                                     <NavLink
                                         href={route('dashboard')}
                                         active={route().current('dashboard')}
@@ -175,6 +208,25 @@ export default function AppLayout({ title, children }) {
                                             </Dropdown>
                                         </div>
                                     )}
+
+                                    <Link
+                                        href={route('cart.index')}
+                                        title="Cart"
+                                        className={`relative inline-flex items-center rounded-md p-2 transition duration-150 ease-in-out focus:outline-none ${
+                                            route().current('cart.*')
+                                                ? 'text-gray-900'
+                                                : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                    >
+                                        <CartIcon className="h-6 w-6" />
+                                        {cartItemCount > 0 && (
+                                            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-bold text-white">
+                                                {cartItemCount > 99
+                                                    ? '99+'
+                                                    : cartItemCount}
+                                            </span>
+                                        )}
+                                    </Link>
 
                                     <div className="relative ms-3">
                                         <Dropdown>
@@ -282,6 +334,14 @@ export default function AppLayout({ title, children }) {
                     </div>
                 </div>
 
+                {/* Search bar: shown on every page, right below the main
+                    nav row and just above the category bar. */}
+                <div className="border-t border-gray-100 bg-white">
+                    <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+                        <SearchBar />
+                    </div>
+                </div>
+
                 <div className="hidden border-t border-gray-100 bg-gray-50 sm:block">
                     <CategoryMegaMenu categories={categoryNav} />
                 </div>
@@ -317,11 +377,36 @@ export default function AppLayout({ title, children }) {
 
                         {user && (
                             <>
+                                {isRealStaff &&
+                                    (previewingAsCustomer ? (
+                                        <ResponsiveNavLink
+                                            href={route(
+                                                'preview-mode.disable',
+                                            )}
+                                            method="post"
+                                            as="button"
+                                        >
+                                            Switch to Admin
+                                        </ResponsiveNavLink>
+                                    ) : (
+                                        <ResponsiveNavLink
+                                            href={route(
+                                                'preview-mode.enable',
+                                            )}
+                                            method="post"
+                                            as="button"
+                                        >
+                                            Switch to Customer
+                                        </ResponsiveNavLink>
+                                    ))}
+
                                 <ResponsiveNavLink
                                     href={route('cart.index')}
                                     active={route().current('cart.*')}
                                 >
                                     Cart
+                                    {cartItemCount > 0 &&
+                                        ` (${cartItemCount})`}
                                 </ResponsiveNavLink>
                                 <ResponsiveNavLink
                                     href={route('orders.index')}

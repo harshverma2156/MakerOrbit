@@ -1,24 +1,8 @@
 import ProductCard from '@/Components/ProductCard';
 import AppLayout from '@/Layouts/AppLayout';
-import { Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { Link } from '@inertiajs/react';
 
 export default function Index({ products, categories, filters }) {
-    const [search, setSearch] = useState(filters?.search ?? '');
-
-    const submitSearch = (e) => {
-        e.preventDefault();
-
-        router.get(
-            route('products.index'),
-            {
-                search: search || undefined,
-                category: filters?.category || undefined,
-            },
-            { preserveState: true, replace: true },
-        );
-    };
-
     const categoryHref = (slug) =>
         route('products.index', {
             category: slug || undefined,
@@ -35,29 +19,19 @@ export default function Index({ products, categories, filters }) {
     return (
         <AppLayout title="Shop Parts">
             <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
                     <h1 className="text-2xl font-bold text-gray-900">
                         Shop Parts
                     </h1>
 
-                    <form
-                        onSubmit={submitSearch}
-                        className="flex w-full max-w-md items-center gap-2"
-                    >
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search by name or SKU..."
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        />
-                        <button
-                            type="submit"
-                            className="inline-flex shrink-0 items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-150 ease-in-out hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                        >
-                            Search
-                        </button>
-                    </form>
+                    {filters?.search && (
+                        <p className="text-sm text-gray-500">
+                            Showing results for{' '}
+                            <span className="font-medium text-gray-700">
+                                &ldquo;{filters.search}&rdquo;
+                            </span>
+                        </p>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
