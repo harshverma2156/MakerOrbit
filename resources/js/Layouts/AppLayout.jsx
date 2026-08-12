@@ -1,9 +1,12 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import AuthModal from '@/Components/AuthModal';
 import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+
+const AUTH_MODAL_DISMISSED_KEY = 'makerorbit_auth_modal_dismissed';
 
 export default function AppLayout({ title, children }) {
     const user = usePage().props.auth?.user;
@@ -11,9 +14,24 @@ export default function AppLayout({ title, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);
 
+    const [showAuthModal, setShowAuthModal] = useState(
+        () =>
+            !user &&
+            window.sessionStorage.getItem(AUTH_MODAL_DISMISSED_KEY) !== '1',
+    );
+
+    const closeAuthModal = () => {
+        window.sessionStorage.setItem(AUTH_MODAL_DISMISSED_KEY, '1');
+        setShowAuthModal(false);
+    };
+
     return (
         <div className="min-h-screen bg-gray-100">
             {title && <Head title={title} />}
+
+            {!user && (
+                <AuthModal show={showAuthModal} onClose={closeAuthModal} />
+            )}
 
             <nav className="border-b border-gray-100 bg-white">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
