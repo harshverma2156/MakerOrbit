@@ -18,7 +18,7 @@ class WishlistController extends Controller
     {
         $items = WishlistItem::where('user_id', $request->user()->id)
             ->with(['product' => function ($query) {
-                $query->with('category')->withAvg('reviews', 'rating')->withCount('reviews');
+                $query->with(['category', 'images'])->withAvg('reviews', 'rating')->withCount('reviews');
             }])
             ->latest()
             ->get();

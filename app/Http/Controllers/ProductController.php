@@ -29,7 +29,7 @@ class ProductController extends Controller
         $maxPrice = $request->input('max_price');
 
         $query = Product::query()
-            ->with(['category', 'subCategory'])
+            ->with(['category', 'subCategory', 'images'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
             ->where('is_active', true)
@@ -107,6 +107,7 @@ class ProductController extends Controller
             ->where('is_active', true)
             ->where('id', '!=', $product->id)
             ->where('category_id', $product->category_id)
+            ->with('images')
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
             ->inRandomOrder()

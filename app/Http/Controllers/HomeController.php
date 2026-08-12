@@ -13,10 +13,10 @@ class HomeController extends Controller
      */
     public function index(): Response
     {
-        $featuredProducts = Product::with('category')
+        $featuredProducts = Product::with(['category', 'images'])
             ->where('is_active', true)
             ->inRandomOrder()
-            ->limit(4)
+            ->limit(5)
             ->get();
 
         return Inertia::render('Home', [

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -122,6 +123,28 @@ class ProductListingTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->where('products.data.0.reviews_count', 1)
             ->where('products.data.0.reviews_avg_rating', fn ($value) => abs($value - 5.0) < 0.01)
+        );
+    }
+
+    public function test_listing_includes_each_products_photos_in_order(): void
+    {
+        // The hover-to-cycle-photos behavior on ProductCard needs the
+        // full gallery, not just the cover image — a regression here
+        // wouldn't break anything visibly on a single-photo product, so
+        // it's worth locking in explicitly rather than trusting the eye.
+        $category = Category::create(['name' => 'Motors', 'slug' => 'motors']);
+        $product = $this->makeProduct($category, [
+            'name' => 'Gallery Motor', 'slug' => 'gallery-motor', 'sku' => 'GAL',
+        ]);
+        ProductImage::create(['product_id' => $product->id, 'path' => 'products/second.jpg', 'sort_order' => 1]);
+        ProductImage::create(['product_id' => $product->id, 'path' => 'products/first.jpg', 'sort_order' => 0]);
+
+        $response = $this->get(route('products.index'));
+
+        $response->assertInertia(fn ($page) => $page
+            ->has('products.data.0.images', 2)
+            ->where('products.data.0.images.0.path', 'products/first.jpg')
+            ->where('products.data.0.images.1.path', 'products/second.jpg')
         );
     }
 

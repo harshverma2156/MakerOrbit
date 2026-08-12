@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\User;
 use App\Models\WishlistItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -99,6 +100,19 @@ class WishlistTest extends TestCase
             ->has('products', 1)
             ->where('products.0.id', $mine->id)
         );
+    }
+
+    public function test_wishlist_products_include_their_photos(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->makeProduct();
+        ProductImage::create(['product_id' => $product->id, 'path' => 'products/one.jpg']);
+        ProductImage::create(['product_id' => $product->id, 'path' => 'products/two.jpg']);
+        WishlistItem::create(['user_id' => $user->id, 'product_id' => $product->id]);
+
+        $response = $this->actingAs($user)->get(route('wishlist.index'));
+
+        $response->assertInertia(fn ($page) => $page->has('products.0.images', 2));
     }
 
     public function test_shared_wishlist_product_ids_prop_reflects_the_users_wishlist(): void
