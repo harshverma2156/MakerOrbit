@@ -12,7 +12,7 @@ export default function CategoryMegaMenu({ categories }) {
 
     return (
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <ul className="flex items-center gap-6 overflow-x-auto py-2 text-sm">
+            <ul className="flex flex-wrap items-center gap-x-6 gap-y-1 py-2 text-sm">
                 <li className="shrink-0">
                     <Link
                         href={route('products.index')}
