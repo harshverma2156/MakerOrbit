@@ -33,7 +33,14 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // If the user was trying to reach a specific page before being
+        // sent to login, honor that first. Otherwise land staff on the
+        // admin dashboard and everyone else on the storefront.
+        $fallback = $request->user()->isStaff()
+            ? route('admin.dashboard', absolute: false)
+            : route('home', absolute: false);
+
+        return redirect()->intended($fallback);
     }
 
     /**

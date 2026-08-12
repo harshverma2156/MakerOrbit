@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\PreviewMode;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,6 +22,15 @@ class EnsureUserIsAdmin
     {
         if (! $request->user()?->isStaff()) {
             abort(403, 'You do not have access to this page.');
+        }
+
+        // Staff testing "how does this look to a customer" via preview
+        // mode shouldn't still be able to act as an admin in the same
+        // breath — send them back out until they explicitly switch back.
+        if (PreviewMode::isActive($request)) {
+            return redirect()
+                ->route('home')
+                ->with('status', "You're previewing as a customer. Switch back to Admin to use the admin area.");
         }
 
         return $next($request);

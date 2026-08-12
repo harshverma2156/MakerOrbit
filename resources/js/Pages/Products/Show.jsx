@@ -25,14 +25,37 @@ function formatSpecValue(value) {
     return String(value);
 }
 
+const returnPolicyLabels = {
+    none: 'No returns or replacements',
+    returnable: 'Returnable',
+    replaceable: 'Replaceable only',
+    both: 'Returnable & replaceable',
+};
+
 export default function Show({ product }) {
     const { auth } = usePage().props;
     const [quantity, setQuantity] = useState(1);
     const [submitting, setSubmitting] = useState(false);
+    const [activeImage, setActiveImage] = useState(0);
 
     const inStock = product.stock_quantity > 0;
     const specs = product.specs ?? {};
     const specEntries = Object.entries(specs);
+    const features = product.features ?? [];
+
+    const mrp = parseFloat(product.mrp);
+    const price = parseFloat(product.price);
+    const discountPercent =
+        mrp && price && mrp > price
+            ? Math.round((1 - price / mrp) * 100)
+            : null;
+
+    const gallery =
+        product.images && product.images.length > 0
+            ? product.images.map((image) => image.url)
+            : product.image_path
+              ? [product.image_path]
+              : [];
 
     const handleAddToCart = (e) => {
         e.preventDefault();
@@ -66,33 +89,64 @@ export default function Show({ product }) {
                 </Link>
 
                 <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-                    <div className="aspect-square w-full overflow-hidden rounded-md border border-gray-200 bg-gray-100 shadow-sm">
-                        {product.image_path ? (
-                            <img
-                                src={product.image_path}
-                                alt={product.name}
-                                className="h-full w-full object-cover"
-                            />
-                        ) : (
-                            <div className="flex h-full w-full items-center justify-center text-gray-300">
-                                <svg
-                                    className="h-24 w-24"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth="1"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M3.75 6.75h16.5v10.5H3.75V6.75Zm0 0 8.25 6 8.25-6"
-                                    />
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M3.75 17.25h16.5"
-                                    />
-                                </svg>
+                    <div>
+                        <div className="relative aspect-square w-full overflow-hidden rounded-md border border-gray-200 bg-gray-100 shadow-sm">
+                            {discountPercent !== null && (
+                                <span className="absolute left-3 top-3 z-10 rounded-full bg-green-600 px-2.5 py-1 text-xs font-semibold text-white">
+                                    {discountPercent}% OFF
+                                </span>
+                            )}
+
+                            {gallery.length > 0 ? (
+                                <img
+                                    src={gallery[activeImage]}
+                                    alt={product.name}
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center text-gray-300">
+                                    <svg
+                                        className="h-24 w-24"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        strokeWidth="1"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M3.75 6.75h16.5v10.5H3.75V6.75Zm0 0 8.25 6 8.25-6"
+                                        />
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M3.75 17.25h16.5"
+                                        />
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
+
+                        {gallery.length > 1 && (
+                            <div className="mt-3 flex gap-2">
+                                {gallery.map((src, index) => (
+                                    <button
+                                        key={src}
+                                        type="button"
+                                        onClick={() => setActiveImage(index)}
+                                        className={`h-16 w-16 overflow-hidden rounded-md border-2 ${
+                                            index === activeImage
+                                                ? 'border-indigo-500'
+                                                : 'border-transparent'
+                                        }`}
+                                    >
+                                        <img
+                                            src={src}
+                                            alt={`${product.name} thumbnail ${index + 1}`}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    </button>
+                                ))}
                             </div>
                         )}
                     </div>
@@ -120,9 +174,23 @@ export default function Show({ product }) {
                             SKU: {product.sku}
                         </p>
 
-                        <p className="mt-4 text-3xl font-bold text-gray-900">
-                            {currencyFormatter.format(product.price)}
-                        </p>
+                        <div className="mt-4 flex flex-wrap items-center gap-3">
+                            <p className="text-3xl font-bold text-gray-900">
+                                {currencyFormatter.format(product.price)}
+                            </p>
+                            {discountPercent !== null && (
+                                <>
+                                    <p className="text-lg text-gray-400 line-through">
+                                        {currencyFormatter.format(
+                                            product.mrp,
+                                        )}
+                                    </p>
+                                    <span className="rounded-full bg-green-50 px-2.5 py-1 text-sm font-semibold text-green-700">
+                                        {discountPercent}% off
+                                    </span>
+                                </>
+                            )}
+                        </div>
 
                         <p
                             className={`mt-2 text-sm font-semibold ${
@@ -134,11 +202,93 @@ export default function Show({ product }) {
                                 : 'Out of Stock'}
                         </p>
 
+                        {features.length > 0 && (
+                            <ul className="mt-4 space-y-1">
+                                {features.map((feature) => (
+                                    <li
+                                        key={feature}
+                                        className="flex items-start gap-2 text-sm text-gray-700"
+                                    >
+                                        <svg
+                                            className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                d="M4.5 12.75l6 6 9-13.5"
+                                            />
+                                        </svg>
+                                        {feature}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+
                         {product.description && (
                             <p className="mt-4 text-sm leading-relaxed text-gray-600">
                                 {product.description}
                             </p>
                         )}
+
+                        {product.specification_url && (
+                            <a
+                                href={product.specification_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                            >
+                                Full specifications &amp; datasheet
+                                <svg
+                                    className="h-3.5 w-3.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                                    />
+                                </svg>
+                            </a>
+                        )}
+
+                        <dl className="mt-4 grid grid-cols-1 gap-2 rounded-md border border-gray-200 bg-gray-50 p-4 text-sm sm:grid-cols-2">
+                            <div className="flex items-center gap-2">
+                                <dt className="font-medium text-gray-600">
+                                    Cash on Delivery:
+                                </dt>
+                                <dd
+                                    className={
+                                        product.cod_available
+                                            ? 'text-green-700'
+                                            : 'text-gray-500'
+                                    }
+                                >
+                                    {product.cod_available
+                                        ? 'Available'
+                                        : 'Not available'}
+                                </dd>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <dt className="font-medium text-gray-600">
+                                    Returns:
+                                </dt>
+                                <dd className="text-gray-700">
+                                    {returnPolicyLabels[
+                                        product.return_policy
+                                    ] ?? returnPolicyLabels.none}
+                                    {product.return_policy !== 'none' &&
+                                        product.return_window_days &&
+                                        ` (${product.return_window_days} days)`}
+                                </dd>
+                            </div>
+                        </dl>
 
                         <div className="mt-6 border-t border-gray-200 pt-6">
                             {auth?.user ? (

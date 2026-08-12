@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\CartItem;
 use App\Models\Category;
+use App\Support\PreviewMode;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -46,11 +48,19 @@ class HandleInertiaRequests extends Middleware
                     'email_verified_at' => $user->email_verified_at,
                 ] : null,
             ],
+            // Real role never changes here — this only tells the nav
+            // whether a staff member has temporarily switched to the
+            // customer view for testing (see PreviewModeController).
+            'previewingAsCustomer' => $user?->isStaff() && PreviewMode::isActive($request),
             // Powers the top-nav "hover a category, see its sub-categories"
             // menu on every page, without every controller needing to load it.
             'categoryNav' => fn () => Category::with('subCategories')
                 ->orderBy('name')
                 ->get(['id', 'name', 'slug']),
+            // Powers the cart icon badge in the header on every page.
+            'cartItemCount' => fn () => $user
+                ? (int) CartItem::whereHas('cart', fn ($query) => $query->where('user_id', $user->id))->sum('quantity')
+                : 0,
         ];
     }
 }
