@@ -1,5 +1,6 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import AuthModal from '@/Components/AuthModal';
+import CategoryMegaMenu from '@/Components/CategoryMegaMenu';
 import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
@@ -10,6 +11,19 @@ const AUTH_MODAL_DISMISSED_KEY = 'makerorbit_auth_modal_dismissed';
 
 export default function AppLayout({ title, children }) {
     const user = usePage().props.auth?.user;
+    const categoryNav = usePage().props.categoryNav ?? [];
+
+    const canManageCatalog =
+        user?.role === 'super_admin' || user?.role === 'product_manager';
+    const canViewOrders =
+        user?.role === 'super_admin' ||
+        user?.role === 'order_manager' ||
+        user?.role === 'support_staff';
+    const canManageStaff = user?.role === 'super_admin';
+    const isStaff = canManageCatalog || canViewOrders || canManageStaff;
+    const activeCategorySlug = new URLSearchParams(
+        window.location.search,
+    ).get('category');
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);
@@ -87,6 +101,80 @@ export default function AppLayout({ title, children }) {
                                     >
                                         Dashboard
                                     </NavLink>
+
+                                    {isStaff && (
+                                        <div className="relative">
+                                            <Dropdown>
+                                                <Dropdown.Trigger>
+                                                    <span className="inline-flex rounded-md">
+                                                        <button
+                                                            type="button"
+                                                            className={`inline-flex items-center rounded-md border border-transparent px-3 py-2 text-sm font-medium leading-4 transition duration-150 ease-in-out focus:outline-none ${
+                                                                route().current(
+                                                                    'admin.*',
+                                                                )
+                                                                    ? 'text-gray-900'
+                                                                    : 'text-gray-500 hover:text-gray-700'
+                                                            }`}
+                                                        >
+                                                            Admin
+                                                            <svg
+                                                                className="-me-0.5 ms-2 h-4 w-4"
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                viewBox="0 0 20 20"
+                                                                fill="currentColor"
+                                                            >
+                                                                <path
+                                                                    fillRule="evenodd"
+                                                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                                    clipRule="evenodd"
+                                                                />
+                                                            </svg>
+                                                        </button>
+                                                    </span>
+                                                </Dropdown.Trigger>
+
+                                                <Dropdown.Content>
+                                                    {canManageCatalog && (
+                                                        <>
+                                                            <Dropdown.Link
+                                                                href={route(
+                                                                    'admin.categories.index',
+                                                                )}
+                                                            >
+                                                                Categories
+                                                            </Dropdown.Link>
+                                                            <Dropdown.Link
+                                                                href={route(
+                                                                    'admin.products.index',
+                                                                )}
+                                                            >
+                                                                Products
+                                                            </Dropdown.Link>
+                                                        </>
+                                                    )}
+                                                    {canViewOrders && (
+                                                        <Dropdown.Link
+                                                            href={route(
+                                                                'admin.orders.index',
+                                                            )}
+                                                        >
+                                                            Orders
+                                                        </Dropdown.Link>
+                                                    )}
+                                                    {canManageStaff && (
+                                                        <Dropdown.Link
+                                                            href={route(
+                                                                'admin.staff.index',
+                                                            )}
+                                                        >
+                                                            Staff &amp; Roles
+                                                        </Dropdown.Link>
+                                                    )}
+                                                </Dropdown.Content>
+                                            </Dropdown>
+                                        </div>
+                                    )}
 
                                     <div className="relative ms-3">
                                         <Dropdown>
@@ -194,6 +282,10 @@ export default function AppLayout({ title, children }) {
                     </div>
                 </div>
 
+                <div className="hidden border-t border-gray-100 bg-gray-50 sm:block">
+                    <CategoryMegaMenu categories={categoryNav} />
+                </div>
+
                 <div
                     className={
                         (showingNavigationDropdown ? 'block' : 'hidden') +
@@ -203,10 +295,25 @@ export default function AppLayout({ title, children }) {
                     <div className="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink
                             href={route('products.index')}
-                            active={route().current('products.*')}
+                            active={
+                                route().current('products.*') &&
+                                !activeCategorySlug
+                            }
                         >
-                            Products
+                            All Products
                         </ResponsiveNavLink>
+
+                        {categoryNav.map((category) => (
+                            <ResponsiveNavLink
+                                key={category.id}
+                                href={route('products.index', {
+                                    category: category.slug,
+                                })}
+                                active={activeCategorySlug === category.slug}
+                            >
+                                {category.name}
+                            </ResponsiveNavLink>
+                        ))}
 
                         {user && (
                             <>
@@ -228,6 +335,50 @@ export default function AppLayout({ title, children }) {
                                 >
                                     Dashboard
                                 </ResponsiveNavLink>
+                                {canManageCatalog && (
+                                    <>
+                                        <ResponsiveNavLink
+                                            href={route(
+                                                'admin.categories.index',
+                                            )}
+                                            active={route().current(
+                                                'admin.categories.*',
+                                            )}
+                                        >
+                                            Admin: Categories
+                                        </ResponsiveNavLink>
+                                        <ResponsiveNavLink
+                                            href={route(
+                                                'admin.products.index',
+                                            )}
+                                            active={route().current(
+                                                'admin.products.*',
+                                            )}
+                                        >
+                                            Admin: Products
+                                        </ResponsiveNavLink>
+                                    </>
+                                )}
+                                {canViewOrders && (
+                                    <ResponsiveNavLink
+                                        href={route('admin.orders.index')}
+                                        active={route().current(
+                                            'admin.orders.*',
+                                        )}
+                                    >
+                                        Admin: Orders
+                                    </ResponsiveNavLink>
+                                )}
+                                {canManageStaff && (
+                                    <ResponsiveNavLink
+                                        href={route('admin.staff.index')}
+                                        active={route().current(
+                                            'admin.staff.*',
+                                        )}
+                                    >
+                                        Admin: Staff &amp; Roles
+                                    </ResponsiveNavLink>
+                                )}
                             </>
                         )}
                     </div>

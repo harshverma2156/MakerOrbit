@@ -25,6 +25,13 @@ export default function Index({ products, categories, filters }) {
             search: filters?.search || undefined,
         });
 
+    const subCategoryHref = (categorySlug, subCategorySlug) =>
+        route('products.index', {
+            category: categorySlug,
+            subcategory: subCategorySlug || undefined,
+            search: filters?.search || undefined,
+        });
+
     return (
         <AppLayout title="Shop Parts">
             <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -87,6 +94,34 @@ export default function Index({ products, categories, filters }) {
                                         >
                                             {category.name}
                                         </Link>
+
+                                        {filters?.category ===
+                                            category.slug &&
+                                            category.sub_categories?.length >
+                                                0 && (
+                                                <ul className="ms-3 mt-1 space-y-1 border-s border-gray-100 ps-3">
+                                                    {category.sub_categories.map(
+                                                        (sub) => (
+                                                            <li key={sub.id}>
+                                                                <Link
+                                                                    href={subCategoryHref(
+                                                                        category.slug,
+                                                                        sub.slug,
+                                                                    )}
+                                                                    className={`block rounded-md px-3 py-1.5 text-sm transition ${
+                                                                        filters?.subcategory ===
+                                                                        sub.slug
+                                                                            ? 'font-semibold text-indigo-700'
+                                                                            : 'text-gray-500 hover:text-indigo-600'
+                                                                    }`}
+                                                                >
+                                                                    {sub.name}
+                                                                </Link>
+                                                            </li>
+                                                        ),
+                                                    )}
+                                                </ul>
+                                            )}
                                     </li>
                                 ))}
                             </ul>

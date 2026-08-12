@@ -28,7 +28,7 @@ class OrderController extends Controller
      */
     public function show(Request $request, Order $order): Response
     {
-        abort_if($order->user_id !== $request->user()->id, 403);
+        $this->authorize('view', $order);
 
         return Inertia::render('Orders/Show', [
             'order' => $order->load('items'),
