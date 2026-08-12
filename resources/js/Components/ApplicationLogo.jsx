@@ -3,8 +3,8 @@
  * tilted orbit ring passing behind it. Single-color by design — every
  * shape uses `currentColor`/`fill="#fff"` for the eye "cutouts" so it
  * inherits whatever text color class the caller applies (see usages in
- * AppLayout, GuestLayout, AuthenticatedLayout), the same convention the
- * previous default Breeze mark used.
+ * AppLayout, GuestLayout, Footer), the same convention the previous
+ * default Breeze mark used.
  */
 export default function ApplicationLogo(props) {
     return (

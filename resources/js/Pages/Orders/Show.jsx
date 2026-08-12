@@ -1,9 +1,11 @@
+import OrderTrackingTimeline from '@/Components/OrderTrackingTimeline';
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link } from '@inertiajs/react';
 
 const statusStyles = {
     pending: 'bg-yellow-100 text-yellow-800',
     processing: 'bg-blue-100 text-blue-800',
+    shipped: 'bg-purple-100 text-purple-800',
     completed: 'bg-green-100 text-green-800',
     cancelled: 'bg-red-100 text-red-800',
 };
@@ -60,6 +62,10 @@ export default function Show({ order }) {
                             >
                                 {order?.status}
                             </span>
+                        </div>
+
+                        <div className="border-b border-gray-200 px-6 py-6">
+                            <OrderTrackingTimeline status={order?.status} />
                         </div>
 
                         <div className="border-b border-gray-200 px-6 py-4">

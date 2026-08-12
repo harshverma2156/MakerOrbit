@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\CartItem;
 use App\Models\Category;
+use App\Models\WishlistItem;
 use App\Support\PreviewMode;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -61,6 +62,11 @@ class HandleInertiaRequests extends Middleware
             'cartItemCount' => fn () => $user
                 ? (int) CartItem::whereHas('cart', fn ($query) => $query->where('user_id', $user->id))->sum('quantity')
                 : 0,
+            // Lets product cards/pages render a filled vs. outline heart
+            // without every controller needing to load it.
+            'wishlistProductIds' => fn () => $user
+                ? WishlistItem::where('user_id', $user->id)->pluck('product_id')
+                : [],
         ];
     }
 }

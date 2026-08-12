@@ -3,7 +3,8 @@ import AuthModal from '@/Components/AuthModal';
 import CartIcon from '@/Components/CartIcon';
 import CategoryMegaMenu from '@/Components/CategoryMegaMenu';
 import Dropdown from '@/Components/Dropdown';
-import NavLink from '@/Components/NavLink';
+import Footer from '@/Components/Footer';
+import ProfileIcon from '@/Components/ProfileIcon';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import SearchBar from '@/Components/SearchBar';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -36,13 +37,13 @@ export default function AppLayout({ title, children }) {
             user?.role === 'order_manager' ||
             user?.role === 'support_staff');
     const canManageStaff = !previewingAsCustomer && user?.role === 'super_admin';
-    const isStaff = canManageCatalog || canViewOrders || canManageStaff;
     const activeCategorySlug = new URLSearchParams(
         window.location.search,
     ).get('category');
 
-    const [showingNavigationDropdown, setShowingNavigationDropdown] =
-        useState(false);
+    // Mobile-only drawer for the category list (the mega menu row is
+    // hidden below `sm`, since it doesn't fit narrow screens).
+    const [showingCategoryMenu, setShowingCategoryMenu] = useState(false);
 
     const [showAuthModal, setShowAuthModal] = useState(
         () =>
@@ -56,7 +57,7 @@ export default function AppLayout({ title, children }) {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="flex min-h-screen flex-col bg-gray-100">
             {title && <Head title={title} />}
 
             {!user && (
@@ -65,291 +66,248 @@ export default function AppLayout({ title, children }) {
 
             <nav className="border-b border-gray-100 bg-white">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 justify-between">
-                        <div className="flex">
-                            <div className="flex shrink-0 items-center gap-2">
-                                <Link
-                                    href={route('home')}
-                                    className="flex items-center gap-2"
-                                >
-                                    <ApplicationLogo className="block h-9 w-auto fill-current text-indigo-600" />
-                                    <span className="text-lg font-bold tracking-tight text-gray-900">
-                                        MakerOrbit
-                                    </span>
-                                </Link>
-                            </div>
+                    {/* Main header row: logo, search bar + button, profile,
+                        cart — in that order, per the site's header spec. */}
+                    <div className="flex h-16 items-center gap-3 sm:gap-6">
+                        <Link
+                            href={route('home')}
+                            className="flex shrink-0 items-center gap-2"
+                        >
+                            <ApplicationLogo className="block h-9 w-auto fill-current text-indigo-600" />
+                            <span className="hidden text-lg font-bold tracking-tight text-gray-900 sm:inline">
+                                MakerOrbit
+                            </span>
+                        </Link>
 
-                            <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink
-                                    href={route('products.index')}
-                                    active={route().current('products.*')}
-                                >
-                                    Products
-                                </NavLink>
-
-                                {user && (
-                                    <NavLink
-                                        href={route('orders.index')}
-                                        active={route().current('orders.*')}
-                                    >
-                                        Orders
-                                    </NavLink>
-                                )}
+                        {/* Always takes the remaining space so profile/cart
+                            stay pinned right; the search bar itself only
+                            renders here from `sm` up — on mobile it moves
+                            to its own full-width row below. */}
+                        <div className="flex-1">
+                            <div className="hidden sm:block">
+                                <SearchBar />
                             </div>
                         </div>
 
-                        <div className="hidden sm:ms-6 sm:flex sm:items-center sm:gap-4">
-                            {user ? (
-                                <>
-                                    {isRealStaff &&
-                                        (previewingAsCustomer ? (
-                                            <Link
-                                                href={route(
-                                                    'preview-mode.disable',
-                                                )}
-                                                method="post"
-                                                as="button"
-                                                title="Testing tool: return to the admin view"
-                                                className="inline-flex items-center rounded-md border border-transparent bg-gray-800 px-3 py-2 text-sm font-medium text-white shadow-sm transition duration-150 ease-in-out hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                                            >
-                                                Switch to Admin
-                                            </Link>
-                                        ) : (
-                                            <Link
-                                                href={route(
-                                                    'preview-mode.enable',
-                                                )}
-                                                method="post"
-                                                as="button"
-                                                title="Testing tool: see the site as a customer would"
-                                                className="inline-flex items-center rounded-md border border-transparent bg-amber-500 px-3 py-2 text-sm font-medium text-white shadow-sm transition duration-150 ease-in-out hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
-                                            >
-                                                Switch to Customer
-                                            </Link>
-                                        ))}
-
-                                    <NavLink
-                                        href={route('dashboard')}
-                                        active={route().current('dashboard')}
+                        <div className="shrink-0">
+                            <Dropdown>
+                                <Dropdown.Trigger>
+                                    <button
+                                        type="button"
+                                        title={
+                                            user
+                                                ? `Signed in as ${user.name}`
+                                                : 'Account'
+                                        }
+                                        className="inline-flex items-center rounded-md p-2 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
                                     >
-                                        Dashboard
-                                    </NavLink>
+                                        <ProfileIcon className="h-6 w-6" />
+                                    </button>
+                                </Dropdown.Trigger>
 
-                                    {isStaff && (
-                                        <div className="relative">
-                                            <Dropdown>
-                                                <Dropdown.Trigger>
-                                                    <span className="inline-flex rounded-md">
-                                                        <button
-                                                            type="button"
-                                                            className={`inline-flex items-center rounded-md border border-transparent px-3 py-2 text-sm font-medium leading-4 transition duration-150 ease-in-out focus:outline-none ${
-                                                                route().current(
-                                                                    'admin.*',
-                                                                )
-                                                                    ? 'text-gray-900'
-                                                                    : 'text-gray-500 hover:text-gray-700'
-                                                            }`}
-                                                        >
-                                                            Admin
-                                                            <svg
-                                                                className="-me-0.5 ms-2 h-4 w-4"
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                viewBox="0 0 20 20"
-                                                                fill="currentColor"
-                                                            >
-                                                                <path
-                                                                    fillRule="evenodd"
-                                                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                                    clipRule="evenodd"
-                                                                />
-                                                            </svg>
-                                                        </button>
-                                                    </span>
-                                                </Dropdown.Trigger>
-
-                                                <Dropdown.Content>
-                                                    {canManageCatalog && (
-                                                        <>
-                                                            <Dropdown.Link
-                                                                href={route(
-                                                                    'admin.categories.index',
-                                                                )}
-                                                            >
-                                                                Categories
-                                                            </Dropdown.Link>
-                                                            <Dropdown.Link
-                                                                href={route(
-                                                                    'admin.products.index',
-                                                                )}
-                                                            >
-                                                                Products
-                                                            </Dropdown.Link>
-                                                        </>
-                                                    )}
-                                                    {canViewOrders && (
-                                                        <Dropdown.Link
-                                                            href={route(
-                                                                'admin.orders.index',
-                                                            )}
-                                                        >
-                                                            Orders
-                                                        </Dropdown.Link>
-                                                    )}
-                                                    {canManageStaff && (
-                                                        <Dropdown.Link
-                                                            href={route(
-                                                                'admin.staff.index',
-                                                            )}
-                                                        >
-                                                            Staff &amp; Roles
-                                                        </Dropdown.Link>
-                                                    )}
-                                                </Dropdown.Content>
-                                            </Dropdown>
-                                        </div>
-                                    )}
-
-                                    <Link
-                                        href={route('cart.index')}
-                                        title="Cart"
-                                        className={`relative inline-flex items-center rounded-md p-2 transition duration-150 ease-in-out focus:outline-none ${
-                                            route().current('cart.*')
-                                                ? 'text-gray-900'
-                                                : 'text-gray-500 hover:text-gray-700'
-                                        }`}
-                                    >
-                                        <CartIcon className="h-6 w-6" />
-                                        {cartItemCount > 0 && (
-                                            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-bold text-white">
-                                                {cartItemCount > 99
-                                                    ? '99+'
-                                                    : cartItemCount}
-                                            </span>
-                                        )}
-                                    </Link>
-
-                                    <div className="relative ms-3">
-                                        <Dropdown>
-                                            <Dropdown.Trigger>
-                                                <span className="inline-flex rounded-md">
-                                                    <button
-                                                        type="button"
-                                                        className="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
-                                                    >
-                                                        {user.name}
-
-                                                        <svg
-                                                            className="-me-0.5 ms-2 h-4 w-4"
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            viewBox="0 0 20 20"
-                                                            fill="currentColor"
-                                                        >
-                                                            <path
-                                                                fillRule="evenodd"
-                                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                                clipRule="evenodd"
-                                                            />
-                                                        </svg>
-                                                    </button>
+                                <Dropdown.Content>
+                                    {user ? (
+                                        <>
+                                            <div className="border-b border-gray-100 px-4 py-2 text-sm text-gray-500">
+                                                Signed in as{' '}
+                                                <span className="font-medium text-gray-900">
+                                                    {user.name}
                                                 </span>
-                                            </Dropdown.Trigger>
+                                            </div>
 
-                                            <Dropdown.Content>
+                                            {isRealStaff &&
+                                                (previewingAsCustomer ? (
+                                                    <Dropdown.Link
+                                                        href={route(
+                                                            'preview-mode.disable',
+                                                        )}
+                                                        method="post"
+                                                        as="button"
+                                                        title="Testing tool: return to the admin view"
+                                                    >
+                                                        Switch to Admin
+                                                    </Dropdown.Link>
+                                                ) : (
+                                                    <Dropdown.Link
+                                                        href={route(
+                                                            'preview-mode.enable',
+                                                        )}
+                                                        method="post"
+                                                        as="button"
+                                                        title="Testing tool: see the site as a customer would"
+                                                    >
+                                                        Switch to Customer
+                                                    </Dropdown.Link>
+                                                ))}
+
+                                            <Dropdown.Link
+                                                href={route('dashboard')}
+                                            >
+                                                Dashboard
+                                            </Dropdown.Link>
+                                            <Dropdown.Link
+                                                href={route('profile.edit')}
+                                            >
+                                                My Profile
+                                            </Dropdown.Link>
+                                            <Dropdown.Link
+                                                href={route('orders.index')}
+                                            >
+                                                My Orders
+                                            </Dropdown.Link>
+                                            <Dropdown.Link
+                                                href={route(
+                                                    'wishlist.index',
+                                                )}
+                                            >
+                                                My Wishlist
+                                            </Dropdown.Link>
+
+                                            {canManageCatalog && (
+                                                <>
+                                                    <Dropdown.Link
+                                                        href={route(
+                                                            'admin.categories.index',
+                                                        )}
+                                                    >
+                                                        Admin: Categories
+                                                    </Dropdown.Link>
+                                                    <Dropdown.Link
+                                                        href={route(
+                                                            'admin.products.index',
+                                                        )}
+                                                    >
+                                                        Admin: Products
+                                                    </Dropdown.Link>
+                                                </>
+                                            )}
+                                            {canViewOrders && (
                                                 <Dropdown.Link
                                                     href={route(
-                                                        'profile.edit',
+                                                        'admin.orders.index',
                                                     )}
                                                 >
-                                                    Profile
+                                                    Admin: Orders
                                                 </Dropdown.Link>
+                                            )}
+                                            {canManageStaff && (
                                                 <Dropdown.Link
-                                                    href={route('logout')}
-                                                    method="post"
-                                                    as="button"
+                                                    href={route(
+                                                        'admin.staff.index',
+                                                    )}
                                                 >
-                                                    Log Out
+                                                    Admin: Staff &amp; Roles
                                                 </Dropdown.Link>
-                                            </Dropdown.Content>
-                                        </Dropdown>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <Link
-                                        href={route('login')}
-                                        className="text-sm font-medium text-gray-600 hover:text-gray-900"
-                                    >
-                                        Log in
-                                    </Link>
-                                    <Link
-                                        href={route('register')}
-                                        className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition duration-150 ease-in-out hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                                    >
-                                        Register
-                                    </Link>
-                                </>
-                            )}
+                                            )}
+
+                                            <Dropdown.Link
+                                                href={route('logout')}
+                                                method="post"
+                                                as="button"
+                                            >
+                                                Log Out
+                                            </Dropdown.Link>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Dropdown.Link
+                                                href={route('login')}
+                                            >
+                                                Log in
+                                            </Dropdown.Link>
+                                            <Dropdown.Link
+                                                href={route('register')}
+                                            >
+                                                Register
+                                            </Dropdown.Link>
+                                        </>
+                                    )}
+                                </Dropdown.Content>
+                            </Dropdown>
                         </div>
 
-                        <div className="-me-2 flex items-center sm:hidden">
-                            <button
-                                onClick={() =>
-                                    setShowingNavigationDropdown(
-                                        (previousState) => !previousState,
-                                    )
-                                }
-                                className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
+                        {/* Cart routes require auth, so there's nowhere for
+                            this to link a guest to — same as before. */}
+                        {user && (
+                            <Link
+                                href={route('cart.index')}
+                                title="Cart"
+                                className={`relative inline-flex shrink-0 items-center rounded-md p-2 transition duration-150 ease-in-out focus:outline-none ${
+                                    route().current('cart.*')
+                                        ? 'text-gray-900'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                }`}
                             >
-                                <svg
-                                    className="h-6 w-6"
-                                    stroke="currentColor"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        className={
-                                            !showingNavigationDropdown
-                                                ? 'inline-flex'
-                                                : 'hidden'
-                                        }
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M4 6h16M4 12h16M4 18h16"
-                                    />
-                                    <path
-                                        className={
-                                            showingNavigationDropdown
-                                                ? 'inline-flex'
-                                                : 'hidden'
-                                        }
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
+                                <CartIcon className="h-6 w-6" />
+                                {cartItemCount > 0 && (
+                                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-bold text-white">
+                                        {cartItemCount > 99
+                                            ? '99+'
+                                            : cartItemCount}
+                                    </span>
+                                )}
+                            </Link>
+                        )}
+
+                        <button
+                            onClick={() =>
+                                setShowingCategoryMenu(
+                                    (previousState) => !previousState,
+                                )
+                            }
+                            title="Browse categories"
+                            className="-me-2 inline-flex shrink-0 items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none sm:hidden"
+                        >
+                            <svg
+                                className="h-6 w-6"
+                                stroke="currentColor"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    className={
+                                        !showingCategoryMenu
+                                            ? 'inline-flex'
+                                            : 'hidden'
+                                    }
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M4 6h16M4 12h16M4 18h16"
+                                />
+                                <path
+                                    className={
+                                        showingCategoryMenu
+                                            ? 'inline-flex'
+                                            : 'hidden'
+                                    }
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M6 18L18 6M6 6l12 12"
+                                />
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
-                {/* Search bar: shown on every page, right below the main
-                    nav row and just above the category bar. */}
-                <div className="border-t border-gray-100 bg-white">
-                    <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
-                        <SearchBar />
-                    </div>
+                {/* Search bar: own full-width row, mobile only (shown
+                    inline in the row above from `sm` up). */}
+                <div className="border-t border-gray-100 bg-white px-4 py-3 sm:hidden">
+                    <SearchBar />
                 </div>
 
+                {/* Categories: shown right below the header row, on every
+                    page. Desktop gets the hover mega menu; mobile gets a
+                    toggled drawer since the menu doesn't fit narrow screens. */}
                 <div className="hidden border-t border-gray-100 bg-gray-50 sm:block">
                     <CategoryMegaMenu categories={categoryNav} />
                 </div>
 
                 <div
                     className={
-                        (showingNavigationDropdown ? 'block' : 'hidden') +
-                        ' sm:hidden'
+                        (showingCategoryMenu ? 'block' : 'hidden') +
+                        ' border-t border-gray-100 sm:hidden'
                     }
                 >
                     <div className="space-y-1 pb-3 pt-2">
@@ -374,142 +332,13 @@ export default function AppLayout({ title, children }) {
                                 {category.name}
                             </ResponsiveNavLink>
                         ))}
-
-                        {user && (
-                            <>
-                                {isRealStaff &&
-                                    (previewingAsCustomer ? (
-                                        <ResponsiveNavLink
-                                            href={route(
-                                                'preview-mode.disable',
-                                            )}
-                                            method="post"
-                                            as="button"
-                                        >
-                                            Switch to Admin
-                                        </ResponsiveNavLink>
-                                    ) : (
-                                        <ResponsiveNavLink
-                                            href={route(
-                                                'preview-mode.enable',
-                                            )}
-                                            method="post"
-                                            as="button"
-                                        >
-                                            Switch to Customer
-                                        </ResponsiveNavLink>
-                                    ))}
-
-                                <ResponsiveNavLink
-                                    href={route('cart.index')}
-                                    active={route().current('cart.*')}
-                                >
-                                    Cart
-                                    {cartItemCount > 0 &&
-                                        ` (${cartItemCount})`}
-                                </ResponsiveNavLink>
-                                <ResponsiveNavLink
-                                    href={route('orders.index')}
-                                    active={route().current('orders.*')}
-                                >
-                                    Orders
-                                </ResponsiveNavLink>
-                                <ResponsiveNavLink
-                                    href={route('dashboard')}
-                                    active={route().current('dashboard')}
-                                >
-                                    Dashboard
-                                </ResponsiveNavLink>
-                                {canManageCatalog && (
-                                    <>
-                                        <ResponsiveNavLink
-                                            href={route(
-                                                'admin.categories.index',
-                                            )}
-                                            active={route().current(
-                                                'admin.categories.*',
-                                            )}
-                                        >
-                                            Admin: Categories
-                                        </ResponsiveNavLink>
-                                        <ResponsiveNavLink
-                                            href={route(
-                                                'admin.products.index',
-                                            )}
-                                            active={route().current(
-                                                'admin.products.*',
-                                            )}
-                                        >
-                                            Admin: Products
-                                        </ResponsiveNavLink>
-                                    </>
-                                )}
-                                {canViewOrders && (
-                                    <ResponsiveNavLink
-                                        href={route('admin.orders.index')}
-                                        active={route().current(
-                                            'admin.orders.*',
-                                        )}
-                                    >
-                                        Admin: Orders
-                                    </ResponsiveNavLink>
-                                )}
-                                {canManageStaff && (
-                                    <ResponsiveNavLink
-                                        href={route('admin.staff.index')}
-                                        active={route().current(
-                                            'admin.staff.*',
-                                        )}
-                                    >
-                                        Admin: Staff &amp; Roles
-                                    </ResponsiveNavLink>
-                                )}
-                            </>
-                        )}
-                    </div>
-
-                    <div className="border-t border-gray-200 pb-1 pt-4">
-                        {user ? (
-                            <>
-                                <div className="px-4">
-                                    <div className="text-base font-medium text-gray-800">
-                                        {user.name}
-                                    </div>
-                                    <div className="text-sm font-medium text-gray-500">
-                                        {user.email}
-                                    </div>
-                                </div>
-
-                                <div className="mt-3 space-y-1">
-                                    <ResponsiveNavLink
-                                        href={route('profile.edit')}
-                                    >
-                                        Profile
-                                    </ResponsiveNavLink>
-                                    <ResponsiveNavLink
-                                        method="post"
-                                        href={route('logout')}
-                                        as="button"
-                                    >
-                                        Log Out
-                                    </ResponsiveNavLink>
-                                </div>
-                            </>
-                        ) : (
-                            <div className="space-y-1">
-                                <ResponsiveNavLink href={route('login')}>
-                                    Log in
-                                </ResponsiveNavLink>
-                                <ResponsiveNavLink href={route('register')}>
-                                    Register
-                                </ResponsiveNavLink>
-                            </div>
-                        )}
                     </div>
                 </div>
             </nav>
 
-            <main>{children}</main>
+            <main className="flex-1">{children}</main>
+
+            <Footer categories={categoryNav} user={user} />
         </div>
     );
 }
