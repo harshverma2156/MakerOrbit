@@ -32,5 +32,10 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             ProductSeeder::class,
         ]);
+
+        // No admin account is seeded here on purpose: admin/staff role
+        // assignment must never live in source-controlled seed data.
+        // After a fresh migrate, grant the first admin with:
+        //   php artisan admin:create {email}
     }
 }

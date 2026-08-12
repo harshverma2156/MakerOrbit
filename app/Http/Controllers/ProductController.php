@@ -17,7 +17,7 @@ class ProductController extends Controller
     public function index(Request $request): Response
     {
         $products = Product::query()
-            ->with('category')
+            ->with(['category', 'subCategory'])
             ->where('is_active', true)
             ->when($request->string('search')->trim()->toString(), function ($query, string $search) {
                 $query->where(function ($query) use ($search) {
@@ -30,14 +30,19 @@ class ProductController extends Controller
                     $query->where('slug', $categorySlug);
                 });
             })
+            ->when($request->string('subcategory')->trim()->toString(), function ($query, string $subCategorySlug) {
+                $query->whereHas('subCategory', function ($query) use ($subCategorySlug) {
+                    $query->where('slug', $subCategorySlug);
+                });
+            })
             ->latest()
             ->paginate(12)
             ->withQueryString();
 
         return Inertia::render('Products/Index', [
             'products' => $products,
-            'categories' => Category::all(),
-            'filters' => $request->only(['search', 'category']),
+            'categories' => Category::with('subCategories')->orderBy('name')->get(),
+            'filters' => $request->only(['search', 'category', 'subcategory']),
         ]);
     }
 
