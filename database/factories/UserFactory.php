@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -41,5 +42,21 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    /**
+     * Give the created user a specific role.
+     *
+     * `role` is deliberately excluded from User::$fillable, so passing it
+     * through `create(['role' => ...])` directly would be silently
+     * dropped. This state assigns it after creation instead, the same
+     * trusted, explicit way the admin staff-management flow does.
+     */
+    public function withRole(UserRole|string $role): static
+    {
+        return $this->afterCreating(function (User $user) use ($role) {
+            $user->role = $role instanceof UserRole ? $role : UserRole::from($role);
+            $user->save();
+        });
     }
 }

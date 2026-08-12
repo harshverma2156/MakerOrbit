@@ -96,4 +96,40 @@ class ProfileTest extends TestCase
 
         $this->assertNotNull($user->fresh());
     }
+
+    public function test_a_deleted_account_can_no_longer_log_in(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->delete('/profile', ['password' => 'password']);
+
+        $this->assertGuest();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
+
+    public function test_a_crafted_profile_update_cannot_grant_a_staff_role(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->patch('/profile', [
+                'name' => $user->name,
+                'email' => $user->email,
+                // Neither field is part of the real profile form; both are
+                // attempts to smuggle admin access through extra fields.
+                'role' => 'super_admin',
+                'is_admin' => true,
+            ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertSame('customer', $user->fresh()->role->value);
+    }
 }
