@@ -49,7 +49,7 @@ class OrderController extends Controller
         $this->authorize('update', $order);
 
         $data = $request->validate([
-            'status' => ['required', 'in:pending,processing,completed,cancelled'],
+            'status' => ['required', 'in:pending,processing,shipped,completed,cancelled'],
         ]);
 
         $order->update(['status' => $data['status']]);

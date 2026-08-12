@@ -16,6 +16,10 @@ export default function SearchBar() {
     const submit = (e) => {
         e.preventDefault();
 
+        if (!query.trim()) {
+            return;
+        }
+
         router.get(
             route('products.index'),
             {
@@ -53,7 +57,8 @@ export default function SearchBar() {
             </div>
             <button
                 type="submit"
-                className="inline-flex shrink-0 items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-150 ease-in-out hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                disabled={!query.trim()}
+                className="inline-flex shrink-0 items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-150 ease-in-out hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-indigo-300 disabled:hover:bg-indigo-300"
             >
                 Search
             </button>

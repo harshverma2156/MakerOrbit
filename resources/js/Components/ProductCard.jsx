@@ -1,4 +1,6 @@
 import CartIcon from '@/Components/CartIcon';
+import StarRating from '@/Components/StarRating';
+import WishlistButton from '@/Components/WishlistButton';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -7,12 +9,18 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
     currency: 'USD',
 });
 
+// Below this many units left (but still in stock), nudge with an
+// urgency badge instead of the plain "in stock" state.
+const LOW_STOCK_THRESHOLD = 5;
+
 export default function ProductCard({ product }) {
     const { auth } = usePage().props;
     const [adding, setAdding] = useState(false);
 
     const identifier = product.slug ?? product.id;
-    const inStock = (product.stock_quantity ?? 0) > 0;
+    const stockQuantity = product.stock_quantity ?? 0;
+    const inStock = stockQuantity > 0;
+    const isLowStock = inStock && stockQuantity <= LOW_STOCK_THRESHOLD;
 
     const mrp = parseFloat(product.mrp);
     const price = parseFloat(product.price);
@@ -48,6 +56,11 @@ export default function ProductCard({ product }) {
                         {discountPercent}% OFF
                     </span>
                 )}
+
+                <WishlistButton
+                    productId={product.id}
+                    className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 p-1.5 shadow-sm transition"
+                />
 
                 {product.image_path ? (
                     <img
@@ -90,7 +103,14 @@ export default function ProductCard({ product }) {
                     {product.name}
                 </h3>
 
-                <div className="mt-auto flex items-center justify-between pt-2">
+                <StarRating
+                    rating={product.reviews_avg_rating}
+                    count={product.reviews_count}
+                    size="h-3.5 w-3.5"
+                    className="text-xs"
+                />
+
+                <div className="mt-auto flex items-center justify-between gap-2 pt-2">
                     <span className="flex items-center gap-2">
                         <span className="text-base font-bold text-gray-900">
                             {currencyFormatter.format(product.price)}
@@ -102,10 +122,16 @@ export default function ProductCard({ product }) {
                         )}
                     </span>
 
-                    {!inStock && (
-                        <span className="text-xs font-medium text-red-500">
+                    {!inStock ? (
+                        <span className="shrink-0 text-xs font-medium text-red-500">
                             Out of stock
                         </span>
+                    ) : (
+                        isLowStock && (
+                            <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-600">
+                                Only {stockQuantity} left!
+                            </span>
+                        )
                     )}
                 </div>
 

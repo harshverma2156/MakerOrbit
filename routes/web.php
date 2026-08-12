@@ -13,6 +13,8 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PreviewModeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -40,6 +42,13 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist', [WishlistController::class, 'store'])->name('wishlist.store');
+    Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
+
+    Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 
     // Deliberately outside the 'admin' middleware group: once preview
     // mode is on, EnsureUserIsAdmin blocks /admin/* for the duration, so

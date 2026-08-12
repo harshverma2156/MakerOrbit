@@ -155,6 +155,13 @@ export default function AppLayout({ title, children }) {
                                             >
                                                 My Orders
                                             </Dropdown.Link>
+                                            <Dropdown.Link
+                                                href={route(
+                                                    'wishlist.index',
+                                                )}
+                                            >
+                                                My Wishlist
+                                            </Dropdown.Link>
 
                                             {canManageCatalog && (
                                                 <>

@@ -86,6 +86,14 @@ class Product extends Model
     }
 
     /**
+     * Get this product's customer reviews.
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
      * Whether the product currently has stock available.
      */
     public function getInStockAttribute(): bool
